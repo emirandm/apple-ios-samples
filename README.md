@@ -1,6 +1,9 @@
 # Mirror of Apple's iOS samples
 
 This repository mirrors [Apple's iOS samples](https://developer.apple.com/library/ios/navigation/#section=Resource%20Types&topic=Sample%20Code).
+I am adding updated or new samples as i come across to them. Master has exact copies from Apple Sample code. I play around with them in branches, updating them or fixing some bugs due to new xcode or swift versions. If are doing the same please help me (and other like us) to update it. 
+
+I tried to fix the ruby file but i don't have the expertise nor the time to continue to trying :(, if you want to help me/us (comunity) out please have a look and we can update the repository.   
 
 | Name | Topic | Framework | Description |
 | --- | --- | --- | --- |
