@@ -25,7 +25,7 @@ class PlayerViewController: UIViewController {
         "hasProtectedContent"
     ]
 
-	let player = AVPlayer()
+    @objc let player = AVPlayer()
 
 	var currentTime: Double {
 		get {
@@ -332,7 +332,8 @@ class PlayerViewController: UIViewController {
     // MARK: - Error Handling
 
 	func handleErrorWithMessage(_ message: String?, error: Error? = nil) {
-        NSLog("Error occured with message: \(message), error: \(error).")
+        
+        NSLog("Error occured with message: \(message ?? "<nil>"), error: \(String(describing: error)).")
     
         let alertTitle = NSLocalizedString("alert.error.title", comment: "Alert title for errors")
         let defaultAlertMessage = NSLocalizedString("error.default.description", comment: "Default error message when no NSError provided")
