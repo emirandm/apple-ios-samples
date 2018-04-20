@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2015 Apple Inc. All Rights Reserved.
+	Copyright (C) 2016 Apple Inc. All Rights Reserved.
 	See LICENSE.txt for this sample’s licensing information
 	
 	Abstract:
@@ -33,7 +33,7 @@ class PlayerViewController: UIViewController {
         }
 		set {
             let newTime = CMTimeMakeWithSeconds(newValue, 1)
-			player.seekToTime(newTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
+			player.seek(to: newTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
 		}
 	}
 
@@ -64,12 +64,24 @@ class PlayerViewController: UIViewController {
 	private var playerLayer: AVPlayerLayer? {
         return playerView.playerLayer
     }
+	
+	/*
+	A formatter for individual date components used to provide an appropriate
+	value for the `startTimeLabel` and `durationLabel`.
+	*/
+	let timeRemainingFormatter: DateComponentsFormatter = {
+		let formatter = DateComponentsFormatter()
+		formatter.zeroFormattingBehavior = .pad
+		formatter.allowedUnits = [.minute, .second]
+		
+		return formatter
+	}()
 
     /*
         A token obtained from calling `player`'s `addPeriodicTimeObserverForInterval(_:queue:usingBlock:)`
         method.
     */
-	private var timeObserverToken: AnyObject?
+	private var timeObserverToken: Any?
 
 	private var playerItem: AVPlayerItem? = nil {
         didSet {
@@ -77,7 +89,7 @@ class PlayerViewController: UIViewController {
                 If needed, configure player item here before associating it with a player.
                 (example: adding outputs, setting text style rules, selecting media options)
             */
-            player.replaceCurrentItemWithPlayerItem(self.playerItem)
+            player.replaceCurrentItem(with: self.playerItem)
         }
 	}
 
@@ -93,7 +105,7 @@ class PlayerViewController: UIViewController {
     
     // MARK: - View Controller
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         /*
@@ -103,24 +115,26 @@ class PlayerViewController: UIViewController {
             and not those destined for a subclass that also happens to be observing 
             these properties.
         */
-        addObserver(self, forKeyPath: "player.currentItem.duration", options: [.New, .Initial], context: &playerViewControllerKVOContext)
-        addObserver(self, forKeyPath: "player.rate", options: [.New, .Initial], context: &playerViewControllerKVOContext)
-        addObserver(self, forKeyPath: "player.currentItem.status", options: [.New, .Initial], context: &playerViewControllerKVOContext)
+        addObserver(self, forKeyPath: #keyPath(PlayerViewController.player.currentItem.duration), options: [.new, .initial], context: &playerViewControllerKVOContext)
+        addObserver(self, forKeyPath: #keyPath(PlayerViewController.player.rate), options: [.new, .initial], context: &playerViewControllerKVOContext)
+        addObserver(self, forKeyPath: #keyPath(PlayerViewController.player.currentItem.status), options: [.new, .initial], context: &playerViewControllerKVOContext)
         
         playerView.playerLayer.player = player
         
-        let movieURL = NSBundle.mainBundle().URLForResource("ElephantSeals", withExtension: "mov")!
-        asset = AVURLAsset(URL: movieURL, options: nil)
+        let movieURL = Bundle.main.url(forResource: "ElephantSeals", withExtension: "mov")!
+        asset = AVURLAsset(url: movieURL, options: nil)
         
         // Make sure we don't have a strong reference cycle by only capturing self as weak.
         let interval = CMTimeMake(1, 1)
-        timeObserverToken = player.addPeriodicTimeObserverForInterval(interval, queue: dispatch_get_main_queue()) {
-            [weak self] time in
-            self?.timeSlider.value = Float(CMTimeGetSeconds(time))
-        }
+		timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: DispatchQueue.main) { [unowned self] time in
+			let timeElapsed = Float(CMTimeGetSeconds(time))
+			
+			self.timeSlider.value = Float(timeElapsed)
+			self.startTimeLabel.text = self.createTimeString(time: timeElapsed)
+		}
     }
     
-    override func viewDidDisappear(animated: Bool) {
+    override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         
         if let timeObserverToken = timeObserverToken {
@@ -130,27 +144,27 @@ class PlayerViewController: UIViewController {
         
         player.pause()
         
-        removeObserver(self, forKeyPath: "player.currentItem.duration", context: &playerViewControllerKVOContext)
-        removeObserver(self, forKeyPath: "player.rate", context: &playerViewControllerKVOContext)
-        removeObserver(self, forKeyPath: "player.currentItem.status", context: &playerViewControllerKVOContext)
+        removeObserver(self, forKeyPath: #keyPath(PlayerViewController.player.currentItem.duration), context: &playerViewControllerKVOContext)
+        removeObserver(self, forKeyPath: #keyPath(PlayerViewController.player.rate), context: &playerViewControllerKVOContext)
+        removeObserver(self, forKeyPath: #keyPath(PlayerViewController.player.currentItem.status), context: &playerViewControllerKVOContext)
     }
     
     // MARK: - Asset Loading
 
-    func asynchronouslyLoadURLAsset(newAsset: AVURLAsset) {
+    func asynchronouslyLoadURLAsset(_ newAsset: AVURLAsset) {
         /*
             Using AVAsset now runs the risk of blocking the current thread (the 
             main UI thread) whilst I/O happens to populate the properties. It's
             prudent to defer our work until the properties we need have been loaded.
         */
-        newAsset.loadValuesAsynchronouslyForKeys(PlayerViewController.assetKeysRequiredToPlay) {
+        newAsset.loadValuesAsynchronously(forKeys: PlayerViewController.assetKeysRequiredToPlay) {
             /*
                 The asset invokes its completion handler on an arbitrary queue. 
                 To avoid multiple threads using our internal state at the same time 
                 we'll elect to use the main thread at all times, let's dispatch
                 our handler to the main queue.
             */
-            dispatch_async(dispatch_get_main_queue()) {
+            DispatchQueue.main.async {
                 /*
                     `self.asset` has already changed! No point continuing because
                     another `newAsset` will come along in a moment.
@@ -164,7 +178,7 @@ class PlayerViewController: UIViewController {
                 for key in PlayerViewController.assetKeysRequiredToPlay {
                     var error: NSError?
                     
-                    if newAsset.statusOfValueForKey(key, error: &error) == .Failed {
+                    if newAsset.statusOfValue(forKey: key, error: &error) == .failed {
                         let stringFormat = NSLocalizedString("error.asset_key_%@_failed.description", comment: "Can't use this AVAsset because one of it's keys failed to load")
 
                         let message = String.localizedStringWithFormat(stringFormat, key)
@@ -176,7 +190,7 @@ class PlayerViewController: UIViewController {
                 }
                 
                 // We can't play this asset.
-                if !newAsset.playable || newAsset.hasProtectedContent {
+                if !newAsset.isPlayable || newAsset.hasProtectedContent {
                     let message = NSLocalizedString("error.asset_not_playable.description", comment: "Can't use this AVAsset because it isn't playable or has protected content")
                     
                     self.handleErrorWithMessage(message)
@@ -195,7 +209,7 @@ class PlayerViewController: UIViewController {
 
     // MARK: - IBActions
 
-	@IBAction func playPauseButtonWasPressed(sender: UIButton) {
+	@IBAction func playPauseButtonWasPressed(_ sender: UIButton) {
 		if player.rate != 1.0 {
             // Not playing forward, so play.
  			if currentTime == duration {
@@ -211,31 +225,31 @@ class PlayerViewController: UIViewController {
 		}
 	}
 	
-	@IBAction func rewindButtonWasPressed(sender: UIButton) {
+	@IBAction func rewindButtonWasPressed(_ sender: UIButton) {
         // Rewind no faster than -2.0.
         rate = max(player.rate - 2.0, -2.0)
 	}
 	
-	@IBAction func fastForwardButtonWasPressed(sender: UIButton) {
+	@IBAction func fastForwardButtonWasPressed(_ sender: UIButton) {
         // Fast forward no faster than 2.0.
         rate = min(player.rate + 2.0, 2.0)
 	}
 
-    @IBAction func timeSliderDidChange(sender: UISlider) {
+    @IBAction func timeSliderDidChange(_ sender: UISlider) {
         currentTime = Double(sender.value)
     }
     
     // MARK: - KVO Observation
 
     // Update our UI when player or `player.currentItem` changes.
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String: AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
         // Make sure the this KVO callback was intended for this view controller.
         guard context == &playerViewControllerKVOContext else {
-            super.observeValueForKeyPath(keyPath, ofObject: object, change: change, context: context)
+            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
             return
         }
 
-        if keyPath == "player.currentItem.duration" {
+        if keyPath == #keyPath(PlayerViewController.player.currentItem.duration) {
             // Update timeSlider and enable/disable controls when duration > 0.0
 
             /*
@@ -243,8 +257,8 @@ class PlayerViewController: UIViewController {
                 `player.currentItem` is nil.
             */
             let newDuration: CMTime
-            if let newDurationAsValue = change?[NSKeyValueChangeNewKey] as? NSValue {
-                newDuration = newDurationAsValue.CMTimeValue
+            if let newDurationAsValue = change?[NSKeyValueChangeKey.newKey] as? NSValue {
+                newDuration = newDurationAsValue.timeValue
             }
             else {
                 newDuration = kCMTimeZero
@@ -252,40 +266,38 @@ class PlayerViewController: UIViewController {
 
             let hasValidDuration = newDuration.isNumeric && newDuration.value != 0
             let newDurationSeconds = hasValidDuration ? CMTimeGetSeconds(newDuration) : 0.0
+			let currentTime = hasValidDuration ? Float(CMTimeGetSeconds(player.currentTime())) : 0.0
 
             timeSlider.maximumValue = Float(newDurationSeconds)
 
-            timeSlider.value = hasValidDuration ? Float(CMTimeGetSeconds(player.currentTime())) : 0.0
+            timeSlider.value = currentTime
             
-            rewindButton.enabled = hasValidDuration
+            rewindButton.isEnabled = hasValidDuration
             
-            playPauseButton.enabled = hasValidDuration
+            playPauseButton.isEnabled = hasValidDuration
             
-            fastForwardButton.enabled = hasValidDuration
+            fastForwardButton.isEnabled = hasValidDuration
             
-            timeSlider.enabled = hasValidDuration
+            timeSlider.isEnabled = hasValidDuration
             
-            startTimeLabel.enabled = hasValidDuration
-            
-            durationLabel.enabled = hasValidDuration
-            
-            // FIXME: Should use NSDateFormatter?
-            let wholeMinutes = Int(trunc(newDurationSeconds / 60))
-
-            durationLabel.text = String(format:"%d:%02d", wholeMinutes, Int(trunc(newDurationSeconds)) - wholeMinutes * 60)
+            startTimeLabel.isEnabled = hasValidDuration
+            startTimeLabel.text = createTimeString(time: currentTime)
+			
+            durationLabel.isEnabled = hasValidDuration
+            durationLabel.text = createTimeString(time: Float(newDurationSeconds))
         }
-        else if keyPath == "player.rate" {
+        else if keyPath == #keyPath(PlayerViewController.player.rate) {
             // Update `playPauseButton` image.
 
-            let newRate = (change?[NSKeyValueChangeNewKey] as! NSNumber).doubleValue
+            let newRate = (change?[NSKeyValueChangeKey.newKey] as! NSNumber).doubleValue
             
             let buttonImageName = newRate == 1.0 ? "PauseButton" : "PlayButton"
             
             let buttonImage = UIImage(named: buttonImageName)
 
-            playPauseButton.setImage(buttonImage, forState: .Normal)
+            playPauseButton.setImage(buttonImage, for: UIControlState())
         }
-        else if keyPath == "player.currentItem.status" {
+        else if keyPath == #keyPath(PlayerViewController.player.currentItem.status) {
             // Display an error if status becomes `.Failed`.
 
             /*
@@ -294,46 +306,54 @@ class PlayerViewController: UIViewController {
             */
             let newStatus: AVPlayerItemStatus
 
-            if let newStatusAsNumber = change?[NSKeyValueChangeNewKey] as? NSNumber {
-                newStatus = AVPlayerItemStatus(rawValue: newStatusAsNumber.integerValue)!
+            if let newStatusAsNumber = change?[NSKeyValueChangeKey.newKey] as? NSNumber {
+                newStatus = AVPlayerItemStatus(rawValue: newStatusAsNumber.intValue)!
             }
             else {
-                newStatus = .Unknown
+                newStatus = .unknown
             }
             
-            if newStatus == .Failed {
+            if newStatus == .failed {
                 handleErrorWithMessage(player.currentItem?.error?.localizedDescription, error:player.currentItem?.error)
             }
         }
     }
 
     // Trigger KVO for anyone observing our properties affected by player and player.currentItem
-    override class func keyPathsForValuesAffectingValueForKey(key: String) -> Set<String> {
+    override class func keyPathsForValuesAffectingValue(forKey key: String) -> Set<String> {
         let affectedKeyPathsMappingByKey: [String: Set<String>] = [
-            "duration":     ["player.currentItem.duration"],
-            "currentTime":  ["player.currentItem.currentTime"],
-            "rate":         ["player.rate"]
+            "duration":     [#keyPath(PlayerViewController.player.currentItem.duration)],
+            "rate":         [#keyPath(PlayerViewController.player.rate)]
         ]
         
-        return affectedKeyPathsMappingByKey[key] ?? super.keyPathsForValuesAffectingValueForKey(key)
+        return affectedKeyPathsMappingByKey[key] ?? super.keyPathsForValuesAffectingValue(forKey: key)
 	}
 
     // MARK: - Error Handling
 
-	func handleErrorWithMessage(message: String?, error: NSError? = nil) {
+	func handleErrorWithMessage(_ message: String?, error: Error? = nil) {
         NSLog("Error occured with message: \(message), error: \(error).")
     
         let alertTitle = NSLocalizedString("alert.error.title", comment: "Alert title for errors")
         let defaultAlertMessage = NSLocalizedString("error.default.description", comment: "Default error message when no NSError provided")
 
-        let alert = UIAlertController(title: alertTitle, message: message == nil ? defaultAlertMessage : message, preferredStyle: UIAlertControllerStyle.Alert)
+        let alert = UIAlertController(title: alertTitle, message: message == nil ? defaultAlertMessage : message, preferredStyle: UIAlertControllerStyle.alert)
 
         let alertActionTitle = NSLocalizedString("alert.error.actions.OK", comment: "OK on error alert")
 
-        let alertAction = UIAlertAction(title: alertActionTitle, style: .Default, handler: nil)
+        let alertAction = UIAlertAction(title: alertActionTitle, style: .default, handler: nil)
         
         alert.addAction(alertAction)
 
-        presentViewController(alert, animated: true, completion: nil)
+        present(alert, animated: true, completion: nil)
+	}
+	
+	// MARK: Convenience
+	
+	func createTimeString(time: Float) -> String {
+		let components = NSDateComponents()
+		components.second = Int(max(0.0, time))
+		
+		return timeRemainingFormatter.string(from: components as DateComponents)!
 	}
 }

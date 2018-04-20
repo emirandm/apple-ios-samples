@@ -6,10 +6,10 @@ Demonstrates how to create a simple movie playback app using only the AVPlayer a
 
 ### Build
 
-Xcode 7.0, iOS 9.0 SDK
+Xcode 8.0, iOS 9.0 SDK
 
 ### Runtime
 
 iOS 9.0 or later
 
-Copyright (C) 2015 Apple Inc. All rights reserved.
+Copyright (C) 2016 Apple Inc. All rights reserved.
