@@ -1,8 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="8121.17" systemVersion="14E8" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="BYZ-38-t0r">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14109" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="8101.14"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14088"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
         <!--Player View Controller-->
@@ -14,11 +19,11 @@
                         <viewControllerLayoutGuide type="bottom" id="wfy-db-euE"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
-                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xrl-4x-Edh">
-                                <rect key="frame" x="70" y="550" width="70" height="30"/>
+                                <rect key="frame" x="66" y="617" width="70" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="30" id="5cK-ah-alZ"/>
                                     <constraint firstAttribute="width" constant="70" id="E4B-3O-1NJ"/>
@@ -29,7 +34,7 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="AcP-gW-NjJ">
-                                <rect key="frame" x="140" y="550" width="70" height="30"/>
+                                <rect key="frame" x="136" y="617" width="70" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="30" id="Ds3-V4-PI5"/>
                                     <constraint firstAttribute="width" constant="70" id="cXK-QP-qNN"/>
@@ -40,7 +45,7 @@
                                 </connections>
                             </button>
                             <slider opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="zs2-tO-O9K">
-                                <rect key="frame" x="218" y="550" width="364" height="31"/>
+                                <rect key="frame" x="214" y="617" width="147" height="31"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="30" id="Wah-wD-K8s"/>
                                 </constraints>
@@ -49,11 +54,11 @@
                                 </connections>
                             </slider>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="k2B-HR-6u1" customClass="PlayerView" customModule="AVFoundationSimplePlayer_Swift" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="20" width="600" height="500"/>
-                                <color key="backgroundColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
+                                <rect key="frame" x="-4" y="20" width="383" height="567"/>
+                                <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
                             <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1Ph-2J-7JL">
-                                <rect key="frame" x="0.0" y="550" width="70" height="30"/>
+                                <rect key="frame" x="-4" y="617" width="70" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="70" id="0HV-El-Nhy"/>
                                     <constraint firstAttribute="height" constant="30" id="Ju6-Bx-wC5"/>
@@ -63,26 +68,24 @@
                                     <action selector="rewindButtonWasPressed:" destination="BYZ-38-t0r" eventType="touchUpInside" id="a5z-7z-Dbp"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0:00" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" enabled="NO" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lSE-mk-Glu" userLabel="StartTime">
-                                <rect key="frame" x="220" y="530" width="50" height="20"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="251" text="0:00" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" enabled="NO" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="lSE-mk-Glu" userLabel="StartTime">
+                                <rect key="frame" x="216" y="597" width="26.5" height="20"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="20" id="3FX-0e-O6P"/>
-                                    <constraint firstAttribute="width" constant="50" id="FxO-it-ceh"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="-:--" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" enabled="NO" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qOC-Kz-nZX" userLabel="Duration">
-                                <rect key="frame" x="530" y="530" width="50" height="20"/>
+                                <rect key="frame" x="250.5" y="597" width="108.5" height="20"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="50" id="dHY-sI-1Zo"/>
                                     <constraint firstAttribute="height" constant="20" id="vny-2p-5hq"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="zs2-tO-O9K" firstAttribute="leading" secondItem="lSE-mk-Glu" secondAttribute="leading" id="0Nl-Eq-0C9"/>
                             <constraint firstItem="AcP-gW-NjJ" firstAttribute="leading" secondItem="xrl-4x-Edh" secondAttribute="trailing" id="0Xi-o4-GPm"/>
@@ -93,6 +96,7 @@
                             <constraint firstItem="zs2-tO-O9K" firstAttribute="width" secondItem="lSE-mk-Glu" secondAttribute="width" id="UTA-oc-lgo"/>
                             <constraint firstItem="zs2-tO-O9K" firstAttribute="centerY" secondItem="AcP-gW-NjJ" secondAttribute="centerY" id="aUq-JI-udW"/>
                             <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="1Ph-2J-7JL" secondAttribute="bottom" constant="20" id="dYL-aD-qru"/>
+                            <constraint firstItem="qOC-Kz-nZX" firstAttribute="leading" secondItem="lSE-mk-Glu" secondAttribute="trailing" constant="8" symbolic="YES" id="eAo-92-ocj"/>
                             <constraint firstItem="zs2-tO-O9K" firstAttribute="centerX" secondItem="lSE-mk-Glu" secondAttribute="centerX" id="eau-ex-HCT"/>
                             <constraint firstItem="k2B-HR-6u1" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="topMargin" constant="70" id="fr7-hU-dZX"/>
                             <constraint firstItem="xrl-4x-Edh" firstAttribute="centerY" secondItem="1Ph-2J-7JL" secondAttribute="centerY" id="gSS-SM-9qW"/>
