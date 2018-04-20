@@ -53,7 +53,7 @@ def get_url(url, cache_key, &progress_callback)
   cache_file
 end
 
-library = JSON.parse(open(get_url('https://developer.apple.com/library/ios/navigation/library.json', 'library.json')).read)
+library = JSON.parse(open(get_url('https://developer.apple.com/library/content/navigation/library.json', 'library.json')).read)
 columns = library['columns']
 samples = library['documents'].find_all {|e| e[columns['type']] == 5}
 topics = library['topics'].find {|e| e['name'] == 'Topics'}['contents'].inject({}) {|h, e| h[e['key'].to_i] = e['name'].gsub(/&amp;/, '&') ; h}
@@ -70,7 +70,7 @@ samples.each do |e|
   subtopic = e[columns['subtopic']]
   framework = e[columns['framework']]
   # Full URL to sample HTML document
-  sample_uri = URI("https://developer.apple.com/library/ios/navigation/").merge(URI(url))
+  sample_uri = URI("https://developer.apple.com/library/content/").merge(URI(url))
   # Remove fragment
   sample_uri.fragment = nil
   # Get the ../../ dir where the book.json file is located
