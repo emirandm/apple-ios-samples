@@ -18,6 +18,13 @@ class MediaViewController: UIViewController {
     private var playbackViewController: PlaybackViewController!
     private var playbackDetailsViewController: PlaybackDetailsViewController!
     private let player = AVPlayer()
+    private var playerItem = AVPlayerItem(url: URL(string: "http://example.com")!) {
+        didSet {
+            if isViewLoaded && playbackDetailsViewController != nil {
+                playbackDetailsViewController.playerItem = self.playerItem
+            }
+        }
+    }
     
     var mediaURL: URL? {
         didSet {
@@ -42,17 +49,21 @@ class MediaViewController: UIViewController {
         // 2) A PlaybackDetailsViewController for property values.
         playbackDetailsViewController = storyboard?.instantiateViewController(withIdentifier: "PlaybackDetails") as! PlaybackDetailsViewController
         playbackDetailsViewController.player = player
+        playbackDetailsViewController.playerItem = self.playerItem
         
         // Add both new views to our stackView.
         stackView.addArrangedSubview(playbackViewController.view)
         stackView.addArrangedSubview(playbackDetailsViewController.view)
+        
+        
     }
     
     // MARK: Convenience
     
     private func updatePlayerItem() {
         if let mediaURL = mediaURL {
-            player.replaceCurrentItem(with: AVPlayerItem(url: mediaURL))
+            playerItem = AVPlayerItem(url: mediaURL)
+            player.replaceCurrentItem(with: playerItem)
         }
         else {
             player.replaceCurrentItem(with: nil)

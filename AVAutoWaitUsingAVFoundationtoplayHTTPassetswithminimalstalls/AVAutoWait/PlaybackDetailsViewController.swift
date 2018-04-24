@@ -10,7 +10,7 @@ import UIKit
 import AVFoundation
 
 /// View controller to display the current property values of a given AVPlayer and its current AVPlayerItem
-class PlaybackDetailsViewController: UIViewController {
+@objcMembers class PlaybackDetailsViewController: UIViewController {
     
     // MARK: Properties
     @IBOutlet weak var rateLabel : UILabel!
@@ -23,23 +23,34 @@ class PlaybackDetailsViewController: UIViewController {
     @IBOutlet weak var playbackBufferEmptyLabel: UILabel!
     @IBOutlet weak var timebaseRateLabel: UILabel!
     
-    var player : AVPlayer?
+    //KVO needs to be of a non optional variable so it preinitialized and observers are redone once it changes
+    dynamic var player : AVPlayer = AVPlayer() {
+        didSet {
+            if  isViewLoaded {
+                self.registerObserversPlayer()
+            }
+        }
+    }
+    
+    //KVO needs to be of a non optional variable so it preinitialized and observers are redone once it changes
+    dynamic var playerItem = AVPlayerItem(url: URL(string: "http://example.com")!) {
+        didSet {
+            if  isViewLoaded {
+                self.registerObserversPlayerItem()
+            }
+        }
+    }
     
     // AVPlayerItem.currentTime() and the AVPlayerItem.timebase's rate are not KVO observable. We check their values regularly using this timer.
     private let nonObservablePropertiesUpdateTimer = DispatchSource.makeTimerSource(flags: [], queue: DispatchQueue.main)
     
-    // An array of key paths for the properties we want to observe.
-    private let observedKeyPaths = [
-        #keyPath(PlaybackDetailsViewController.player.rate),
-        #keyPath(PlaybackDetailsViewController.player.timeControlStatus),
-        #keyPath(PlaybackDetailsViewController.player.reasonForWaitingToPlay),
-        #keyPath(PlaybackDetailsViewController.player.currentItem.playbackLikelyToKeepUp),
-        #keyPath(PlaybackDetailsViewController.player.currentItem.loadedTimeRanges),
-        #keyPath(PlaybackDetailsViewController.player.currentItem.playbackBufferFull),
-        #keyPath(PlaybackDetailsViewController.player.currentItem.playbackBufferEmpty)
-    ]
-    
-    private var observerContext = 0
+    var rateObservation: NSKeyValueObservation?
+    var timeControlStatusObservation: NSKeyValueObservation?
+    var reasonForWaitingToPlayObservation: NSKeyValueObservation?
+    var playbackLikelyToKeepUpObservation: NSKeyValueObservation?
+    var loadedTimeRangesObservation: NSKeyValueObservation?
+    var playbackBufferFullObservation: NSKeyValueObservation?
+    var playbackBufferEmptyObservation: NSKeyValueObservation?
     
     // MARK: View Life Cycle
     
@@ -49,19 +60,59 @@ class PlaybackDetailsViewController: UIViewController {
         nonObservablePropertiesUpdateTimer.setEventHandler { [weak self] in
             self?.updateNonObservableProperties()
         }
-        nonObservablePropertiesUpdateTimer.scheduleRepeating(deadline: DispatchTime.now(), interval: DispatchTimeInterval.milliseconds(100))
+        nonObservablePropertiesUpdateTimer.schedule(deadline: DispatchTime.now(), repeating: DispatchTimeInterval.milliseconds(100))
         nonObservablePropertiesUpdateTimer.resume()
+        registerObserversPlayer()
+        registerObserversPlayerItem()
+    }
+    
+    // MARK: Property Change Handlers
+    func registerObserversPlayer() {
         
-        // Register observers for the properties we want to display.
-        for keyPath in observedKeyPaths {
-            addObserver(self, forKeyPath: keyPath, options: [.new, .initial], context: &observerContext)
+        //Update the UI as AVPlayer properties change.
+        
+        self.rateObservation = observe(\.player.rate) { (object, change) in
+            object.rateLabel.text = object.player.rate.description
+            print("rateObservation")
+        }
+        
+        self.timeControlStatusObservation = observe(\.player.timeControlStatus) { (object, change) in
+            object.timeControlStatusLabel.text = object.player.timeControlStatus.description
+            object.timeControlStatusLabel.backgroundColor = object.labelBackgroundColor(forTimeControlStatus: object.player.timeControlStatus)
+            print("timeControlStatusObservation")
+        }
+        self.reasonForWaitingToPlayObservation = observe(\.player.reasonForWaitingToPlay) { (object, change) in
+            var text = "-"
+            if let reasonForWaiting = object.player.reasonForWaitingToPlay {
+                text = object.abbreviatedDescription(forReasonForWaitingToPlay: reasonForWaiting)
+            }
+            object.reasonForWaitingLabel.text = text
+            print("reasonForWaitingToPlayObservation")
         }
     }
     
-    deinit {
-        // Un-register observers
-        for keyPath in observedKeyPaths {
-            removeObserver(self, forKeyPath: keyPath, context: &observerContext)
+    func registerObserversPlayerItem() {
+        self.playbackLikelyToKeepUpObservation = observe(\.playerItem.isPlaybackLikelyToKeepUp) { (object, change) in
+            
+            object.likelyToKeepUpLabel.text = object.player.currentItem?.isPlaybackLikelyToKeepUp.description ?? "-"
+            print("playbackLikelyToKeepUpObservation-")
+        }
+        
+        self.loadedTimeRangesObservation = observe(\.playerItem.loadedTimeRanges) { (object, change) in
+            
+            object.loadedTimeRangesLabel.text = object.player.currentItem?.loadedTimeRanges.asTimeRanges.description ?? "-"
+            print("loadedTimeRangesObservation-")
+        }
+        
+        self.playbackBufferFullObservation = observe(\.playerItem.isPlaybackBufferFull) { (object, change) in
+            
+            object.playbackBufferFullLabel.text = object.player.currentItem?.isPlaybackBufferFull.description ?? "-"
+            print("playbackBufferFullObservation-")
+        }
+        self.playbackBufferEmptyObservation = observe(\.playerItem.isPlaybackBufferEmpty) { (object, change) in
+            
+            object.playbackBufferEmptyLabel.text = object.player.currentItem?.isPlaybackBufferEmpty.description ?? "-"
+            print("playbackBufferEmptyObservation-")
         }
     }
     
@@ -83,15 +134,15 @@ class PlaybackDetailsViewController: UIViewController {
     
     
     /// Helper function to get an abbreviated description for the waiting reason.
-    private func abbreviatedDescription(forReasonForWaitingToPlay reason: String) -> String {
+    private func abbreviatedDescription(forReasonForWaitingToPlay reason: AVPlayer.WaitingReason) -> String {
         switch reason {
-        case AVPlayerWaitingToMinimizeStallsReason:
+        case .toMinimizeStalls:
             return "Minimizing Stalls"
             
-        case AVPlayerWaitingWhileEvaluatingBufferingRateReason:
+        case .evaluatingBufferingRate:
             return "Evaluating Buffering Rate"
             
-        case AVPlayerWaitingWithNoItemToPlayReason:
+        case .noItemToPlay:
             return "No Item"
             
         default:
@@ -99,42 +150,9 @@ class PlaybackDetailsViewController: UIViewController {
         }
     }
     
-    // MARK: Property Change Handlers
-    
-    //Update the UI as AVPlayer properties change.
-    override func observeValue(forKeyPath keyPath: String?, of object: AnyObject?, change: [NSKeyValueChangeKey : AnyObject]?, context: UnsafeMutablePointer<Void>?) {
-        guard context == &observerContext else {
-            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
-            return
-        }
-        
-        if keyPath == #keyPath(PlaybackDetailsViewController.player.rate) {
-            rateLabel.text = player?.rate.description ?? "-"
-        }
-        else if keyPath == #keyPath(PlaybackDetailsViewController.player.timeControlStatus) {
-            timeControlStatusLabel.text = player?.timeControlStatus.description ?? "-"
-            timeControlStatusLabel.backgroundColor = (player?.timeControlStatus).map(labelBackgroundColor(forTimeControlStatus:)) ?? #colorLiteral(red: 1, green: 0.9999743700027466, blue: 0.9999912977218628, alpha: 1)
-        }
-        else if keyPath == #keyPath(PlaybackDetailsViewController.player.reasonForWaitingToPlay) {
-            reasonForWaitingLabel.text = player?.reasonForWaitingToPlay.map(abbreviatedDescription(forReasonForWaitingToPlay:)) ?? "-"
-        }
-        else if keyPath == #keyPath(PlaybackDetailsViewController.player.currentItem.playbackLikelyToKeepUp) {
-            likelyToKeepUpLabel.text = player?.currentItem?.isPlaybackLikelyToKeepUp.description ?? "-"
-        }
-        else if keyPath == #keyPath(PlaybackDetailsViewController.player.currentItem.loadedTimeRanges) {
-            loadedTimeRangesLabel.text = player?.currentItem?.loadedTimeRanges.asTimeRanges.description ?? "-"
-        }
-        else if keyPath == #keyPath(PlaybackDetailsViewController.player.currentItem.playbackBufferFull) {
-            playbackBufferFullLabel.text = player?.currentItem?.isPlaybackBufferFull.description ?? "-"
-        }
-        else if keyPath == #keyPath(PlaybackDetailsViewController.player.currentItem.playbackBufferEmpty) {
-            playbackBufferEmptyLabel.text = player?.currentItem?.isPlaybackBufferEmpty.description ?? "-"
-        }
-    }
-    
     private func updateNonObservableProperties() {
-        currentTimeLabel.text = player?.currentItem?.currentTime().description ?? "-"
-        timebaseRateLabel.text = player?.currentItem?.timebase != nil ? CMTimebaseGetRate(player!.currentItem!.timebase!).description : "-"
+        currentTimeLabel.text = player.currentItem?.currentTime().description ?? "-"
+        timebaseRateLabel.text = player.currentItem?.timebase != nil ? CMTimebaseGetRate(player.currentItem!.timebase!).description : "-"
     }
     
 }
