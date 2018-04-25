@@ -6,7 +6,7 @@ This sample demonstrates how to use automatic waiting to deal with bandwidth lim
 
 ### Build
 
-Xcode 8.0 or later; iOS 10.0 SDK or later
+Xcode 9.3 or later; iOS 10.0 SDK or later
 
 ### Runtime
 

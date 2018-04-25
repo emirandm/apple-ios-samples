@@ -64,6 +64,15 @@ import AVFoundation
         nonObservablePropertiesUpdateTimer.resume()
         registerObserversPlayer()
         registerObserversPlayerItem()
+        
+        //register observer with optional
+        addObserver(self, forKeyPath: #keyPath(PlaybackDetailsViewController.player.currentItem.playbackLikelyToKeepUp), options: [.new, .initial], context: &observerContext)
+        
+    }
+    
+    deinit {
+        // Un-register observers
+        removeObserver(self, forKeyPath: #keyPath(PlaybackDetailsViewController.player.currentItem.playbackLikelyToKeepUp), context: &observerContext)
     }
     
     // MARK: Property Change Handlers
@@ -92,11 +101,19 @@ import AVFoundation
     }
     
     func registerObserversPlayerItem() {
-        self.playbackLikelyToKeepUpObservation = observe(\.playerItem.isPlaybackLikelyToKeepUp) { (object, change) in
-            
-            object.likelyToKeepUpLabel.text = object.player.currentItem?.isPlaybackLikelyToKeepUp.description ?? "-"
-            print("playbackLikelyToKeepUpObservation-")
-        }
+        
+        //working alternatives for kvo
+//        self.playbackLikelyToKeepUpObservation = observe(\.player.currentItem!.isPlaybackLikelyToKeepUp) { (object, change) in
+//
+//            object.likelyToKeepUpLabel.text = object.player.currentItem?.isPlaybackLikelyToKeepUp.description ?? "-"
+//            print("playbackLikelyToKeepUpObservation-")
+//        }
+        
+//        self.playbackLikelyToKeepUpObservation = observe(\.playerItem.isPlaybackLikelyToKeepUp) { (object, change) in
+//
+//            object.likelyToKeepUpLabel.text = object.player.currentItem?.isPlaybackLikelyToKeepUp.description ?? "-"
+//            print("playbackLikelyToKeepUpObservation-")
+//        }
         
         self.loadedTimeRangesObservation = observe(\.playerItem.loadedTimeRanges) { (object, change) in
             
@@ -153,6 +170,24 @@ import AVFoundation
     private func updateNonObservableProperties() {
         currentTimeLabel.text = player.currentItem?.currentTime().description ?? "-"
         timebaseRateLabel.text = player.currentItem?.timebase != nil ? CMTimebaseGetRate(player.currentItem!.timebase!).description : "-"
+    }
+    
+    private var observerContext = 0
+    
+    //Update the UI as AVPlayer properties change.
+    override func observeValue(forKeyPath keyPath: String?,
+                      of object: Any?,
+                      change: [NSKeyValueChangeKey : Any]?,
+                      context: UnsafeMutableRawPointer?) {
+//        guard context == &observerContext else {
+//            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+//            return
+//        }
+        
+        if keyPath == #keyPath(PlaybackDetailsViewController.player.currentItem.playbackLikelyToKeepUp) {
+            likelyToKeepUpLabel.text = player.currentItem?.isPlaybackLikelyToKeepUp.description ?? "-"
+            print("playbackLikelyToKeepUpObservation-:\(likelyToKeepUpLabel.text!)")
+        }
     }
     
 }
