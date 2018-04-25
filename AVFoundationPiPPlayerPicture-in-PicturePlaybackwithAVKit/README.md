@@ -18,10 +18,10 @@ The PlayerViewController class creates and manages an AVPictureInPictureControll
 
 ### Build
 
-Xcode 7.0, iOS 9.0 SDK
+Xcode 9.2, iOS 11.2 SDK
 
 ### Runtime
 
-iOS 9.0
+iPad Air, iPad mini 2, iOS 9.0 or later
 
-Copyright (C) 2015 Apple Inc. All rights reserved.
+Copyright (C) 2016, 2017 Apple Inc. All rights reserved.

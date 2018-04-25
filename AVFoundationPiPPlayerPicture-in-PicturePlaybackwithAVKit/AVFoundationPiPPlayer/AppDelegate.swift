@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2015 Apple Inc. All Rights Reserved.
+	Copyright (C) 2018 Apple Inc. All Rights Reserved.
 	See LICENSE.txt for this sample’s licensing information
 	
 	Abstract:
@@ -15,8 +15,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 	
 	var window: UIWindow?
 	
-	func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
-		/* 
+	func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey : Any]? = nil) -> Bool {
+		/*
 			Setup audio session for picture in picture playback.
 			Application has to be configured correctly to be able to initiate picture in picture.
 			This configuration involves:
@@ -32,8 +32,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 		do {
 			try audioSession.setCategory(AVAudioSessionCategoryPlayback)
-		}
-		catch {
+		} catch {
 			print("Audio session setCategory failed")
 		}
 
